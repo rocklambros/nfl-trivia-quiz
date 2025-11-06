@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NFL Trivia Exam - Test your NFL knowledge with 10 challenging questions">
+    <meta name="theme-color" content="#013369">
+    <title>NFL Trivia Exam</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="container">
+        <!-- Page Header -->
+        <header class="page-header">
+            <h1>NFL Trivia Exam</h1>
+            <p class="subtitle">Test your NFL knowledge with {{ total_questions }} challenging questions</p>
+            <p class="text-muted">Select one answer for each question and submit when complete</p>
+        </header>
+
+        <!-- Flash Messages (Error Display) -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div role="alert" aria-live="polite">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}" style="background: #fef2f2; border: 2px solid #DC3545; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; color: #343A40;">
+                            <strong>{{ message }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Exam Form -->
+        <form method="POST" action="{{ url_for('submit') }}" class="exam-form" id="examForm" novalidate>
+            <!-- Questions Loop -->
+            {% for question_id, question_data in questions.items() %}
+                <fieldset class="question-card" id="question-{{ loop.index }}">
+                    <legend class="sr-only">Question {{ loop.index }} of {{ total_questions }}</legend>
+
+                    <!-- Question Header -->
+                    <div class="question-header">
+                        <span class="question-number" aria-label="Question {{ loop.index }}">Q{{ loop.index }}</span>
+                        <p class="question-text">{{ question_data.question }}</p>
+                    </div>
+
+                    <!-- Answer Options -->
+                    <ul class="options-list" role="radiogroup" aria-labelledby="question-{{ loop.index }}-text">
+                        {% for option_key, option_text in question_data.options.items() %}
+                            <li class="option-item">
+                                <label class="option-label" for="{{ question_id }}_{{ option_key }}">
+                                    <input
+                                        type="radio"
+                                        id="{{ question_id }}_{{ option_key }}"
+                                        name="{{ question_id }}"
+                                        value="{{ option_key }}"
+                                        required
+                                        aria-required="true"
+                                    >
+                                    <span class="option-text">
+                                        <strong>{{ option_key }}.</strong> {{ option_text }}
+                                    </span>
+                                </label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </fieldset>
+            {% endfor %}
+
+            <!-- Submit Button -->
+            <div class="text-center">
+                <button
+                    type="submit"
+                    class="btn btn-primary btn-block"
+                    id="submitBtn"
+                    aria-label="Submit exam for grading"
+                >
+                    Submit Exam
+                </button>
+            </div>
+        </form>
+
+        <!-- Progress Indicator (Hidden, updated via JS) -->
+        <div id="progressIndicator" class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            <span id="progressText">0 of {{ total_questions }} questions answered</span>
+        </div>
+    </main>
+
+    <!-- Client-Side Validation & Enhancement Script -->
+    <script>
+        (function() {
+            'use strict';
+
+            const form = document.getElementById('examForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const progressIndicator = document.getElementById('progressIndicator');
+            const progressText = document.getElementById('progressText');
+            const totalQuestions = {{ total_questions }};
+            const questionCards = document.querySelectorAll('.question-card');
+
+            // Track answered questions
+            function updateProgress() {
+                const answeredQuestions = new Set();
+
+                // Count unique answered questions
+                document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+                    answeredQuestions.add(radio.name);
+                });
+
+                const answeredCount = answeredQuestions.size;
+
+                // Update progress text
+                progressText.textContent = `${answeredCount} of ${totalQuestions} questions answered`;
+
+                // Visual feedback: mark answered question cards
+                questionCards.forEach(card => {
+                    const questionId = card.id.replace('question-', '');
+                    const radios = card.querySelectorAll('input[type="radio"]');
+                    const isAnswered = Array.from(radios).some(radio => radio.checked);
+
+                    if (isAnswered) {
+                        card.classList.add('answered');
+                    } else {
+                        card.classList.remove('answered');
+                    }
+                });
+
+                // Enable submit button styling when all answered (optional enhancement)
+                if (answeredCount === totalQuestions) {
+                    submitBtn.removeAttribute('disabled');
+                    submitBtn.setAttribute('aria-label', 'Submit exam for grading - all questions answered');
+                }
+
+                return answeredCount;
+            }
+
+            // Form validation before submission
+            function validateForm(event) {
+                const answeredCount = updateProgress();
+
+                if (answeredCount < totalQuestions) {
+                    event.preventDefault();
+
+                    const missingCount = totalQuestions - answeredCount;
+                    const message = `Please answer all questions. ${missingCount} question${missingCount !== 1 ? 's' : ''} remaining.`;
+
+                    alert(message);
+
+                    // Focus first unanswered question
+                    const firstUnanswered = Array.from(questionCards).find(card => {
+                        const radios = card.querySelectorAll('input[type="radio"]');
+                        return !Array.from(radios).some(radio => radio.checked);
+                    });
+
+                    if (firstUnanswered) {
+                        firstUnanswered.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        const firstRadio = firstUnanswered.querySelector('input[type="radio"]');
+                        if (firstRadio) {
+                            setTimeout(() => firstRadio.focus(), 300);
+                        }
+                    }
+
+                    return false;
+                }
+
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting...';
+
+                return true;
+            }
+
+            // Event listeners
+            form.addEventListener('change', updateProgress);
+            form.addEventListener('submit', validateForm);
+
+            // Keyboard navigation enhancement: Arrow keys within question groups
+            questionCards.forEach(card => {
+                const radios = Array.from(card.querySelectorAll('input[type="radio"]'));
+
+                radios.forEach((radio, index) => {
+                    radio.addEventListener('keydown', (event) => {
+                        let targetIndex;
+
+                        switch(event.key) {
+                            case 'ArrowDown':
+                            case 'ArrowRight':
+                                event.preventDefault();
+                                targetIndex = (index + 1) % radios.length;
+                                radios[targetIndex].focus();
+                                radios[targetIndex].checked = true;
+                                updateProgress();
+                                break;
+
+                            case 'ArrowUp':
+                            case 'ArrowLeft':
+                                event.preventDefault();
+                                targetIndex = (index - 1 + radios.length) % radios.length;
+                                radios[targetIndex].focus();
+                                radios[targetIndex].checked = true;
+                                updateProgress();
+                                break;
+                        }
+                    });
+                });
+            });
+
+            // Initialize on page load
+            updateProgress();
+
+            // Prevent accidental form resubmission
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Exam';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

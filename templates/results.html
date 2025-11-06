@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NFL Trivia Exam Results - View your score and detailed answer breakdown">
+    <title>NFL Trivia Exam - Your Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container results-container">
+        <!-- Page Header -->
+        <header class="page-header">
+            <h1>NFL Trivia Exam Results</h1>
+            <p class="subtitle">Your Performance Summary</p>
+        </header>
+
+        <!-- Score Display Card -->
+        <section class="score-display {% if results.percentage >= 90 %}outstanding{% elif results.percentage >= 80 %}excellent{% elif results.percentage >= 70 %}good{% else %}needs-improvement{% endif %}" aria-labelledby="score-heading">
+            <h2 id="score-heading" class="sr-only">Your Exam Score</h2>
+
+            <!-- Large Percentage Display -->
+            <div class="score-number" aria-label="Score percentage">
+                {{ results.percentage | int }}%
+            </div>
+
+            <!-- Fraction Display -->
+            <div class="score-fraction" aria-label="Questions answered correctly">
+                {{ results.correct_count }} out of {{ results.total_questions }} correct
+            </div>
+
+            <!-- Performance Message -->
+            <p class="score-message" role="status">
+                {{ results.feedback_message }}
+            </p>
+        </section>
+
+        <!-- Answer Breakdown Section -->
+        <section class="answer-breakdown" aria-labelledby="breakdown-heading">
+            <h2 id="breakdown-heading" class="breakdown-header">
+                Question-by-Question Review
+            </h2>
+
+            <!-- Loop through each question's results -->
+            {% for question_id in ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10'] %}
+                {% set detail = results.details[question_id] %}
+                {% set question = questions[question_id] %}
+
+                <article class="answer-item {% if detail.is_correct %}correct{% else %}incorrect{% endif %}">
+                    <!-- Question Number and Text -->
+                    <h3 class="answer-question">
+                        <span class="question-number">Question {{ loop.index }}</span>
+                        {{ detail.question_text }}
+                    </h3>
+
+                    <!-- Correct/Incorrect Status -->
+                    <div class="answer-status {% if detail.is_correct %}correct{% else %}incorrect{% endif %}" role="status" aria-label="{% if detail.is_correct %}Correct answer{% else %}Incorrect answer{% endif %}">
+                        {% if detail.is_correct %}
+                            Correct
+                        {% else %}
+                            Incorrect
+                        {% endif %}
+                    </div>
+
+                    <!-- Answer Details -->
+                    <div class="answer-detail">
+                        <!-- Your Answer -->
+                        <p>
+                            <strong>Your Answer:</strong>
+                            {{ detail.user_answer }}) {{ question.options[detail.user_answer] }}
+                        </p>
+
+                        <!-- Show Correct Answer if incorrect -->
+                        {% if not detail.is_correct %}
+                            <p style="color: var(--success-green); font-weight: 600; margin-top: var(--spacing-xs);">
+                                <strong>Correct Answer:</strong>
+                                {{ detail.correct_answer }}) {{ question.options[detail.correct_answer] }}
+                            </p>
+                        {% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        </section>
+
+        <!-- Action Buttons -->
+        <div class="text-center mt-lg">
+            <!-- Primary Action: Retake Exam -->
+            <a href="{{ url_for('retake') }}" class="btn btn-primary btn-block" role="button">
+                Retake Exam
+            </a>
+
+            <!-- Secondary Action: Print Results (Optional) -->
+            <button
+                onclick="window.print()"
+                class="btn btn-secondary btn-block"
+                style="margin-top: var(--spacing-sm);"
+                aria-label="Print your exam results"
+            >
+                Print Results
+            </button>
+        </div>
+
+        <!-- Accessibility Note -->
+        <div class="sr-only" role="status" aria-live="polite">
+            Exam results loaded. You scored {{ results.percentage | int }}% with {{ results.correct_count }} out of {{ results.total_questions }} questions correct.
+        </div>
+    </div>
+
+    <!-- Optional: Print-friendly JavaScript enhancements -->
+    <script>
+        // Add print event listener for analytics (optional)
+        window.addEventListener('beforeprint', function() {
+            console.log('User printing exam results');
+        });
+
+        // Accessibility: Focus management for screen readers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set focus to main heading for screen reader navigation
+            const mainHeading = document.querySelector('h1');
+            if (mainHeading) {
+                mainHeading.setAttribute('tabindex', '-1');
+                mainHeading.focus();
+            }
+        });
+    </script>
+</body>
+</html>

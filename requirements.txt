@@ -1,0 +1,23 @@
+# NFL Trivia Exam - Python Dependencies
+# Flask 2.3+ web framework for the exam application
+Flask==3.0.0
+
+# Werkzeug provides WSGI utilities for Flask (automatically installed with Flask)
+# Included here for explicit version control
+Werkzeug==3.0.1
+
+# Jinja2 template engine (automatically installed with Flask)
+# Included here for explicit version control
+Jinja2==3.1.2
+
+# MarkupSafe for safe string handling in templates
+MarkupSafe==2.1.1
+
+# Development dependencies (optional - uncomment to install)
+# pip install -r requirements.txt --with-dev
+# python-dotenv==1.0.0        # For environment variable management in development
+# pytest==7.4.3              # For unit testing
+# pytest-cov==4.1.0          # For test coverage reporting
+# flask-cors==4.0.0          # For CORS support if needed for future APIs
+# black==23.11.0             # For code formatting
+# flake8==6.1.0              # For code linting
