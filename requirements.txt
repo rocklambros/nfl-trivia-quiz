@@ -4,7 +4,7 @@ Flask==3.0.0
 
 # Werkzeug provides WSGI utilities for Flask (automatically installed with Flask)
 # Included here for explicit version control
-Werkzeug==3.0.1
+Werkzeug==3.0.6
 
 # Jinja2 template engine (automatically installed with Flask)
 # Included here for explicit version control
