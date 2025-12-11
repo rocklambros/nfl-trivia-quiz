@@ -8,7 +8,7 @@ Werkzeug==3.0.1
 
 # Jinja2 template engine (automatically installed with Flask)
 # Included here for explicit version control
-Jinja2==3.1.2
+Jinja2==3.1.6
 
 # MarkupSafe for safe string handling in templates
 MarkupSafe==2.1.1
